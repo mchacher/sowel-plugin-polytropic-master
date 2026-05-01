@@ -1,0 +1,43 @@
+{
+  "id": "polytropic_master",
+  "type": "integration",
+  "name": "Polytropic Master Inverter",
+  "version": "1.0.0",
+  "description": "Pool heat pump (Polytropic Master Inverter) over Modbus RTU/TCP via a Waveshare gateway",
+  "icon": "Waves",
+  "repo": "mchacher/sowel-plugin-polytropic-master",
+  "author": "mchacher",
+  "sowelVersion": ">=1.4.0",
+  "settings": [
+    {
+      "key": "host",
+      "label": "Modbus gateway host",
+      "type": "text",
+      "required": true,
+      "defaultValue": "192.168.0.242",
+      "placeholder": "192.168.0.242"
+    },
+    {
+      "key": "port",
+      "label": "Modbus gateway TCP port",
+      "type": "number",
+      "required": true,
+      "defaultValue": "4196"
+    },
+    {
+      "key": "slave_id",
+      "label": "Modbus slave ID",
+      "type": "number",
+      "required": true,
+      "defaultValue": "17"
+    },
+    {
+      "key": "poll_interval_sec",
+      "label": "Polling interval (seconds)",
+      "type": "number",
+      "required": true,
+      "defaultValue": "60"
+    }
+  ],
+  "apiVersion": 2
+}
