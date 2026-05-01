@@ -14,7 +14,6 @@
       "label": "Modbus gateway host",
       "type": "text",
       "required": true,
-      "defaultValue": "192.168.0.242",
       "placeholder": "192.168.0.242"
     },
     {

@@ -100,7 +100,7 @@ class PolytropicMasterPlugin implements IntegrationPlugin {
 
   getSettingsSchema(): IntegrationSettingDef[] {
     return [
-      { key: "host", label: "Modbus gateway host", type: "text", required: true, defaultValue: "192.168.0.242" },
+      { key: "host", label: "Modbus gateway host", type: "text", required: true, placeholder: "192.168.0.242" },
       { key: "port", label: "Modbus gateway TCP port", type: "number", required: true, defaultValue: "4196" },
       { key: "slave_id", label: "Modbus slave ID", type: "number", required: true, defaultValue: "17" },
       { key: "poll_interval_sec", label: "Polling interval (seconds)", type: "number", required: true, defaultValue: "60" },

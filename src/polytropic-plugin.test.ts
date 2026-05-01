@@ -24,12 +24,11 @@ function makeDeviceManager(): {
   const updates: Array<{ key: string; value: unknown }> = [];
   const statuses: string[] = [];
   const dm: DeviceManager = {
-    registerDevice(input) {
-      registered.push(input);
-      return { id: "id1", integrationId: input.integrationId, sourceDeviceId: input.sourceDeviceId, name: input.name };
+    upsertFromDiscovery(_iid, _src, discovered) {
+      registered.push(discovered);
     },
-    updateDeviceData(_iid, _sid, key, value) {
-      updates.push({ key, value });
+    updateDeviceData(_iid, _sid, payload) {
+      for (const [k, v] of Object.entries(payload)) updates.push({ key: k, value: v });
     },
     updateDeviceStatus(_iid, _sid, status) {
       statuses.push(status);

@@ -29,7 +29,6 @@ export interface DeviceData {
   key: string;
   type: "boolean" | "number" | "enum" | "text" | "json";
   category: string;
-  value: unknown;
   unit?: string;
   enumValues?: string[];
 }
@@ -44,21 +43,25 @@ export interface DeviceOrder {
   unit?: string;
 }
 
+export interface DiscoveredDevice {
+  ieeeAddress?: string;
+  friendlyName: string;
+  manufacturer?: string;
+  model?: string;
+  data: DeviceData[];
+  orders: DeviceOrder[];
+}
+
 export interface DeviceManager {
-  registerDevice(input: {
-    integrationId: string;
-    sourceDeviceId: string;
-    name: string;
-    manufacturer?: string;
-    model?: string;
-    data: DeviceData[];
-    orders: DeviceOrder[];
-  }): { id: string; integrationId: string; sourceDeviceId: string; name: string };
+  upsertFromDiscovery(
+    integrationId: string,
+    source: string,
+    discovered: DiscoveredDevice,
+  ): void;
   updateDeviceData(
     integrationId: string,
     sourceDeviceId: string,
-    key: string,
-    value: unknown,
+    payload: Record<string, unknown>,
   ): void;
   updateDeviceStatus(integrationId: string, sourceDeviceId: string, status: string): void;
 }
@@ -133,23 +136,20 @@ export class PolytropicEngine {
   }
 
   private registerDevice(): void {
-    this.cfg.deviceManager.registerDevice({
-      integrationId: this.cfg.integrationId,
-      sourceDeviceId: this.sourceDeviceId,
-      name: "Polytropic Master Inverter",
+    this.cfg.deviceManager.upsertFromDiscovery(this.cfg.integrationId, "modbus", {
+      friendlyName: this.sourceDeviceId,
       manufacturer: "Polytropic",
       model: "Master Inverter",
       data: [
-        { key: "water_temperature", type: "number", category: "pool_water_temperature", value: null, unit: "°C" },
-        { key: "outdoor_temperature", type: "number", category: "temperature_outdoor", value: null, unit: "°C" },
+        { key: "water_temperature", type: "number", category: "pool_water_temperature", unit: "°C" },
+        { key: "outdoor_temperature", type: "number", category: "temperature_outdoor", unit: "°C" },
         {
           key: "mode",
           type: "enum",
           category: "appliance_state",
-          value: null,
           enumValues: ["OFF", "SMART", "BOOST", "ECO"],
         },
-        { key: "setpoint", type: "number", category: "pool_temperature_setpoint", value: null, unit: "°C" },
+        { key: "setpoint", type: "number", category: "pool_temperature_setpoint", unit: "°C" },
       ],
       orders: [
         {
@@ -177,6 +177,7 @@ export class PolytropicEngine {
       return;
     }
     this.polling = true;
+    this.logger.info({}, "Polling Polytropic registers");
     try {
       if (!this.client || !this.client.isConnected()) {
         await this.tryReconnect();
@@ -190,36 +191,19 @@ export class PolytropicEngine {
       // are not contiguous (512/515 vs 1000/1001), so we must split.
       const tempRegs = await this.client.readHoldingRegisters(REG.WATER_TEMPERATURE, 4); // 512..515
       const ctrlRegs = await this.client.readHoldingRegisters(REG.MODE, 2); // 1000..1001
+      this.logger.info({ tempRegs, ctrlRegs }, "Modbus read OK");
 
       const water = decodeTempX10(tempRegs[0]);
       const outdoor = decodeTempX10(tempRegs[3]);
       const mode = decodeMode(ctrlRegs[0]);
       const setpoint = decodeTempX10(ctrlRegs[1]);
 
-      this.cfg.deviceManager.updateDeviceData(
-        this.cfg.integrationId,
-        this.sourceDeviceId,
-        "water_temperature",
-        water,
-      );
-      this.cfg.deviceManager.updateDeviceData(
-        this.cfg.integrationId,
-        this.sourceDeviceId,
-        "outdoor_temperature",
-        outdoor,
-      );
-      this.cfg.deviceManager.updateDeviceData(
-        this.cfg.integrationId,
-        this.sourceDeviceId,
-        "mode",
+      this.cfg.deviceManager.updateDeviceData(this.cfg.integrationId, this.sourceDeviceId, {
+        water_temperature: water,
+        outdoor_temperature: outdoor,
         mode,
-      );
-      this.cfg.deviceManager.updateDeviceData(
-        this.cfg.integrationId,
-        this.sourceDeviceId,
-        "setpoint",
         setpoint,
-      );
+      });
 
       this.consecutiveFailures = 0;
       if (this.status !== "online") {
