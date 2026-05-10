@@ -62,12 +62,25 @@ export class ModbusClient {
 
   async readHoldingRegisters(address: number, count: number): Promise<number[]> {
     if (!this.connected) throw new Error("Modbus client not connected");
-    const res = await this.client.readHoldingRegisters(address, count);
-    return Array.from(res.data as number[]);
+    try {
+      const res = await this.client.readHoldingRegisters(address, count);
+      return Array.from(res.data as number[]);
+    } catch (err) {
+      // Transport errors (port closed, timeout, ECONNRESET) leave the underlying
+      // socket unusable. Mark dirty so the next caller forces a reconnect
+      // instead of looping forever on a dead handle.
+      this.connected = false;
+      throw err;
+    }
   }
 
   async writeRegister(address: number, value: number): Promise<void> {
     if (!this.connected) throw new Error("Modbus client not connected");
-    await this.client.writeRegister(address, value);
+    try {
+      await this.client.writeRegister(address, value);
+    } catch (err) {
+      this.connected = false;
+      throw err;
+    }
   }
 }
