@@ -2,7 +2,7 @@
   "id": "polytropic_master",
   "type": "integration",
   "name": "Polytropic Master Inverter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Pool heat pump (Polytropic Master Inverter) over Modbus RTU/TCP via a Waveshare gateway",
   "icon": "Waves",
   "repo": "mchacher/sowel-plugin-polytropic-master",
